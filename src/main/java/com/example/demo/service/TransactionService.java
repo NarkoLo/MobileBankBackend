@@ -8,9 +8,12 @@ import com.example.demo.model.TransactionResponse;
 import com.example.demo.model.TransferRequest;
 import com.example.demo.repository.AccountRepository;
 import com.example.demo.repository.TransactionRepository;
+import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import javax.security.auth.login.AccountNotFoundException;
+import java.math.BigDecimal;
+import java.util.*;
 
 @Service
 public class TransactionService {
@@ -22,17 +25,15 @@ public class TransactionService {
         this.transactionRepository = transactionRepository;
     }
 
-    public TransactionResponse transfer(TransferRequest transferRequest) {
+    @SneakyThrows
+    public TransactionResponse transfer(TransferRequest transferRequest){
         // реализация бизнес-логики для перевода денег между счетами
-        Account sender = accountRepository.findByAccountNumber(transferRequest.getSenderAccountNumber())
-                .orElseThrow(() -> new AccountNotFoundException("Sender account not found"));
+        Account sender = accountRepository.findByAccountNumber(transferRequest.getFromAccountNumber())
+                .orElseThrow(() -> new AccountNotFoundException("Отправитель не найден"));
 
-        Account recipient = accountRepository.findByAccountNumber(transferRequest.getRecipientAccountNumber())
-                .orElseThrow(() -> new AccountNotFoundException("Recipient account not found"));
+        Account recipient = accountRepository.findByAccountNumber(transferRequest.getToAccountNumber())
+                .orElseThrow(() -> new AccountNotFoundException("Получатель не найден"));
 
-        if (sender.getBalance().compareTo(transferRequest.getAmount()) < 0) {
-            throw new InsufficientBalanceException("Insufficient balance");
-        }
 
         sender.setBalance(sender.getBalance().subtract(transferRequest.getAmount()));
         recipient.setBalance(recipient.getBalance().add(transferRequest.getAmount()));
@@ -46,21 +47,52 @@ public class TransactionService {
         transaction = transactionRepository.save(transaction);
 
         return new TransactionResponse(transaction.getId(), transaction.getSender().getAccountNumber(),
-                transaction.getRecipient().getAccountNumber(), transaction.getAmount(), transaction.getTimestamp());
+                transaction.getRecipient().getAccountNumber(), transaction.getAmount(), transaction.getDate());
     }
 
     public List<TransactionResponse> getAllTransactions() {
         // реализация бизнес-логики для вывода всех транзакций
+        List<Transaction> transactions = transactionRepository.findAll();
+        return mapToTransactionResponseList(transactions);
     }
 
     public List<TransactionResponse> getTransactionsByUser(Long userId) {
         // реализация бизнес-логики для вывода транзакций пользователя
+        List<Account> accounts = accountRepository.findByOwnerId(userId);
+        List<Transaction> transactions = new ArrayList<>();
+
+        for (Account account : accounts) {
+            transactions.addAll(transactionRepository.findBySenderId(account.getId()));
+            transactions.addAll(transactionRepository.findByRecipientId(account.getId()));
+        }
+        transactions.sort(Comparator.comparing(Transaction::getDate).reversed());
+        return mapToTransactionResponseList(transactions);
     }
+
+
 
     public List<TransactionResponse> getTransactionsByAccount(Long accountId) {
         // реализация бизнес-логики для вывода транзакций счета
+        List<Transaction> transactions = new ArrayList<>();
+        transactions.addAll(transactionRepository.findBySenderId(accountId));
+        transactions.addAll(transactionRepository.findByRecipientId(accountId));
+
+        transactions.sort(Comparator.comparing(Transaction::getDate).reversed());
+        return mapToTransactionResponseList(transactions);
     }
 
-    public AccountResponse openAccount(OpenAccountRequest openAccountRequest) {
+
+
+
+    private List<TransactionResponse> mapToTransactionResponseList(List<Transaction> transactions) {
+        List<TransactionResponse> transactionResponses = new ArrayList<>();
+
+        for (Transaction transaction : transactions) {
+            transactionResponses.add(new TransactionResponse(transaction.getId(),
+                    transaction.getSender().getAccountNumber(), transaction.getRecipient().getAccountNumber(),
+                    transaction.getAmount(), transaction.getDate()));
+        }
+
+        return transactionResponses;
     }
 }

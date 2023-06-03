@@ -7,6 +7,8 @@ import com.example.demo.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
+import java.util.UUID;
 
 @Service
 public class AccountService {
@@ -19,7 +21,8 @@ public class AccountService {
         // создание нового счета
         Account account = new Account();
         account.setOwnerId(openAccountRequest.getOwnerId());
-        account.setAccountType(openAccountRequest.getAccountType());
+
+        account.setAccountNumber(UUID.randomUUID().toString());
         account.setBalance(BigDecimal.ZERO);
 
         // сохранение счета в базе данных
@@ -29,7 +32,6 @@ public class AccountService {
         AccountResponse accountResponse = new AccountResponse();
         accountResponse.setId(account.getId());
         accountResponse.setOwnerId(account.getOwnerId());
-        accountResponse.setAccountType(account.getAccountType());
         accountResponse.setBalance(account.getBalance());
         return accountResponse;
     }
@@ -57,7 +59,6 @@ public class AccountService {
         AccountResponse accountResponse = new AccountResponse();
         accountResponse.setId(account.getId());
         accountResponse.setOwnerId(account.getOwnerId());
-        accountResponse.setAccountType(account.getAccountType());
         accountResponse.setBalance(account.getBalance());
         return accountResponse;
     }

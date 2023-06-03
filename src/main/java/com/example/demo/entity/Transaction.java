@@ -29,4 +29,8 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipient_id", nullable = false)
     private Account recipient;
+
+    public Transaction() {
+        this.date = LocalDateTime.now();
+    }
 }
