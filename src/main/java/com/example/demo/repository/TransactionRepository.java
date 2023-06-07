@@ -5,8 +5,24 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-    List<Transaction> findBySenderId(Long senderId);
+/**
 
+ нтерфейс, представляющий репозиторий для работы с банковскими транзакциями.
+ */
+public interface TransactionRepository extends JpaRepository<Transaction, Long> {
+
+    /**
+
+     Метод для поиска списка транзакций по идентификатору отправителя.
+     @param senderId дентификатор отправителя транзакций.
+     @return Список объектов класса Transaction, содержащих транзакции, отправленные указанным отправителем.
+     */
+    List<Transaction> findBySenderId(Long senderId);
+    /**
+
+     Метод для поиска списка транзакций по идентификатору получателя.
+     @param recipientId дентификатор получателя транзакций.
+     @return Список объектов класса Transaction, содержащих транзакции, полученные указанным получателем.
+     */
     List<Transaction> findByRecipientId(Long recipientId);
 }
